@@ -8,8 +8,9 @@
 local cwd = ...
 local separator
 local filename
+local lsystem = require("love.system")
 
-local system = love.system.getOS()
+local system = lsystem.getOS()
 if system == "Windows" then
    separator = "/"
    --test for 64 bit interface
@@ -38,7 +39,7 @@ else
 end
 love.filesystem.setCRequirePath( love.filesystem.getCRequirePath() .. ";"..cwd:gsub("%.", separator)..separator..filename)
 
-   if love.system.getOS() == "Windows" then
+if lsystem.getOS() == "Windows" then
    local core    = require("ssl.core")
    local context = require("ssl.context")
    local x509    = require("ssl.x509")
@@ -202,7 +203,7 @@ love.filesystem.setCRequirePath( love.filesystem.getCRequirePath() .. ";"..cwd:g
    core.setmethod("info", info)
 
    return {wrap = wrap}
-elseif love.system.getOS() == "Linux" then
+elseif lsystem.getOS() == "Linux" then
    local core    = require("ssl.core")
    local context = require("ssl.context")
    local x509    = require("ssl.x509")
