@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil, discard-returns
 local cwd = ((...):reverse():gsub((".server"):reverse(), ""):reverse()) -- proper cleanup was left on my old laptop lol
 local socket = require("socket")
 local ssl = require(cwd..".lib")
@@ -384,9 +385,9 @@ function server:Run(retries, retry_timeout)
                 else
                     self:Log("    Success!", "DEBUG")
                     local ip, port = self.socket:getsockname()
-                    self:Log(("The server is running on %s:%s"):format(ip, port), "WARN")
                     local protocol = self.enablessl and "https" or "http"
                     if ip == "0.0.0.0" then
+                        self:Log(("The server is running on all available addresses (%s://%s:%s)"):format(protocol, ip, port), "WARN")
                         local res
                         if love.system.getOS() == "Linux" then
                             local cmd = io.popen("hostname -I | awk '{print $1}'")
@@ -400,9 +401,11 @@ function server:Run(retries, retry_timeout)
                         if res and res ~= "" then
                             self:Log(("    The server is running on public address accessible at %s://%s:%s"):format(protocol, res, port), "INFO")
                         end
+                        self:Log(("    The server is running on private address accessible at %s://localhost:%s"):format(protocol, port), "INFO")
+                        self:Log(("    The server is running on private address accessible at %s://127.0.0.1:%s"):format(protocol, port), "INFO")
+                    else
+                        self:Log(("The server is running on %s://%s:%s"):format(protocol, ip, port), "WARN")
                     end
-                    self:Log(("    The server is running on private address accessible at %s://localhost:%s"):format(protocol, port), "INFO")
-                    self:Log(("    The server is running on private address accessible at %s://127.0.0.1:%s"):format(protocol, port), "INFO")
                     if love.system.getOS() == "Windows" then
                         self:Log("Windows version is heavily outdated. It may contain severe security vulnerabities so I would advise against using it in production", "WARN")
                     end
@@ -425,13 +428,18 @@ function server:Run(retries, retry_timeout)
         if self.enablessl then
             self:Log("SSL Handshake", "DEBUG")
             conn, sslerr = ssl.wrap(conn, self.sslparams)
-            conn:dohandshake()
+            if conn then
+                conn:dohandshake()
+            else
+                self:Log(sslerr, "ERROR")
+                goto continue
+            end
         end
         local r, e = conn:receive()
         if r then
             time = love.timer.getTime()
             local args = split(r, "%s")
-            self:Log(("Connection: %s   %s  %s"):format(args[1], args[2], args[3]), "INFO")
+            self:Log(("Connection: %s  %s  %s"):format(args[1], args[2], args[3]), "INFO")
             path = args[2]
             if path:find("?") then
                 path = path:sub(0, path:find("?")-1)

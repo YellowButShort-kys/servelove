@@ -1,3 +1,4 @@
+---@diagnostic disable: need-check-nil
 ------------------------------------------------------------------------------
 -- LuaSec 0.4.1 - 1.3.2
 -- Copyright (C) 2006-2023 Bruno Silvestre
@@ -23,7 +24,7 @@ if system == "Windows" then
       filename = "ssl_win32.dll"
    end
 elseif system == "Linux" then
-   separator = "\\"
+   separator = "/"
    --test for 64 bit interface
    local cmd = io.popen("uname -m");
    local res = cmd:read("*a");
