@@ -3,6 +3,7 @@ local cwd = ((...):reverse():gsub((".server"):reverse(), ""):reverse()) -- prope
 local socket = require("socket")
 local ssl = require(cwd..".lib")
 local profiler = require(cwd .. ".profiler")
+local ltimer = require("love.timer")
 
 ---@class ServeLoveServer
 local server = {}
@@ -414,7 +415,7 @@ function server:Run(retries, retry_timeout)
             end
             n = n + 1
             if retry_timeout then
-                love.timer.sleep(retry_timeout)
+                ltimer.sleep(retry_timeout)
             end
         end
     end
@@ -437,7 +438,7 @@ function server:Run(retries, retry_timeout)
         end
         local r, e = conn:receive()
         if r then
-            time = love.timer.getTime()
+            time = ltimer.getTime()
             local args = split(r, "%s")
             self:Log(("Connection: %s  %s  %s"):format(args[1], args[2], args[3]), "INFO")
             path = args[2]
@@ -474,9 +475,9 @@ function server:Run(retries, retry_timeout)
                 if res.authentication then
                     self:Log("Auth", "DEBUG")
 
-                    local t = love.timer.getTime()
+                    local t = ltimer.getTime()
                     local res, msg = pcall(res.authentication, NewQuery(query, headers, args[2], args[1], conn, cookies, complex_args))
-                    profiler.RecordTime(self, love.timer.getTime() - t, "Authentication", path)
+                    profiler.RecordTime(self, ltimer.getTime() - t, "Authentication", path)
 
                     if res then
                         if not msg then
@@ -490,7 +491,7 @@ function server:Run(retries, retry_timeout)
                     end
                 end
                 
-                local t = love.timer.getTime()
+                local t = ltimer.getTime()
                 if type == 3 then
                     local response = NewResponse()
                     
@@ -505,11 +506,11 @@ function server:Run(retries, retry_timeout)
                         conn:send(AssembleResponse(self, 503))
                     end
                 end
-                profiler.RecordTime(self, love.timer.getTime() - t, "Callback", path)
+                profiler.RecordTime(self, ltimer.getTime() - t, "Callback", path)
             else
                 conn:send(AssembleResponse(self, 404))
             end
-            profiler.RecordTime(self, love.timer.getTime() - time, "Total time per connection", path)
+            profiler.RecordTime(self, ltimer.getTime() - time, "Total time per connection", path)
         elseif e == "closed" then
             self:Log("Connection closed", "WARN")
         else
